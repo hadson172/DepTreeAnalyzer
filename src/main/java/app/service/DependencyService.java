@@ -3,47 +3,48 @@ package app.service;
 import app.model.Dependency;
 import app.model.Scope;
 import app.model.Version;
+import app.service.readers.ReaderService;
+import lombok.RequiredArgsConstructor;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 public class DependencyService {
     private static final Pattern DEP_PATTERN = Pattern.compile("([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)");
     private static final Pattern RELEASE_PATTERN = Pattern.compile("([^-]+)-RELEASE");
     private static final Pattern SNAPSHOT_PATTERN = Pattern.compile("([^-]+)-SNAPSHOT");
+    private static final Pattern VALID_DEP_LINE_PATTERN = Pattern.compile("\\[INFO] (\\+-|\\||\\\\-)(.*)");
     //private static final Pattern REDUNDANT_CHARS = Pattern.compile("\\[INFO]|\\s*|\\+-|");
 
     private final ReaderService readerService;
 
-    public DependencyService(ReaderService readerService) {
-        this.readerService = readerService;
-    }
-
-    public List<Dependency> getSourceDependency() {
-        return readerService.getSourceDependencies().stream()
+    public List<Dependency> getSourceDependency(Path path) {
+        return readerService.getDependencyTree(path)
                 .map(this::dependencyOf)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
-    public void findUpdatedDependenciesUsingIO() {
-        findUpdatedDependencies(readerService.getTargetDependencies())
-                .forEach(System.out::println);
-    }
-
-    public List<String> findUpdatedDependencies(List<String> targetDependenciesStr) {
-        List<Dependency> targetDependencies = targetDependenciesStr.stream()
+    public List<String> findUpdatedDependencies(Path pathToSourceDependencies, Path pathToTargetDependencies) {
+        List<Dependency> targetDependencies = readerService.getDependencyTree(pathToTargetDependencies)
+                .filter(d -> VALID_DEP_LINE_PATTERN.matcher(d).matches())
                 .map(this::dependencyOf)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
 
 
-        return getSourceDependency().stream()
+        return readerService.getDependencyTree(pathToSourceDependencies)
+                .filter(d -> VALID_DEP_LINE_PATTERN.matcher(d).matches())
+                .map(this::dependencyOf)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .map(source -> targetDependencies.stream().filter(target -> isUpdated(source, target)).map(target -> mapToUpdatedDependencies(source, target)).findAny().orElse(""))
                 .filter(e -> !e.isEmpty())
                 .collect(Collectors.toList());
@@ -62,12 +63,12 @@ public class DependencyService {
 
     private String cleanDependenciesString(String dependency) {
         //TODO Replace these nasty expressions with some kind regex
-        return dependency.replaceAll("\\[INFO]","")
+        return dependency.replaceAll("\\[INFO]", "")
                 .replaceAll(" ", "")
-                .replaceAll(Pattern.quote("\\-"),"")
-                .replaceAll("\\|","")
-                .replaceAll("\\+-","")
-                .replaceAll("(.*omitted.*)","");
+                .replaceAll(Pattern.quote("\\-"), "")
+                .replaceAll("\\|", "")
+                .replaceAll("\\+-", "")
+                .replaceAll("(.*omitted.*)", "");
     }
 
     public Version versionOf(String version) {
