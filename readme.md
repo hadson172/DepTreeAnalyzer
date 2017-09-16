@@ -1,5 +1,5 @@
 # DepTreeAnalyzer
-Simple Application which allow you find out which dependencies from two dependency trees were updated ( to which version, scope).
+Simple Application which allow you find out which dependencies from two dependency trees were updated (to which version, scope), added, removed.
 
 ## Getting started
 To run project you must set up properties file and few properties listed bellow.
