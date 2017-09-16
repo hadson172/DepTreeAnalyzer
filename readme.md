@@ -1,7 +1,7 @@
-#DepTreeAnalyzer
-Simple Application which allow you find out which dependencies from two dependency tree were updated ( to which version, scope).
+# DepTreeAnalyzer
+Simple Application which allow you find out which dependencies from two dependency trees were updated ( to which version, scope).
 
-##Getting started
+## Getting started
 To run project you must set up properties file and few properties listed bellow.
 
 ### Prerequisites
@@ -9,7 +9,7 @@ To run project you must set up properties file and few properties listed bellow.
 
 
 ### Installing
-* Create **app.properties** file in resource directory
+* Create **app.properties** file in resources directory
 * Setup properties:
 
 ```
